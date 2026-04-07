@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎼 Mozart's Musical Dice Game - Complete Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #5a4fcf;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #5a4fcf;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #5a4fcf;
+            font-size: 1.8em;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin: 20px 0 10px 0;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            font-style: italic;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .game-controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px 10px 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: center;
+        }
+
+        .dice {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dice.rolling {
+            animation: roll 0.5s ease-in-out;
+        }
+
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
+        .waltz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .half-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .half-title {
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #5a4fcf;
+            margin-bottom: 15px;
+        }
+
+        .measures-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .measure-box {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .measure-box.active {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            border-color: #0066cc;
+            transform: scale(1.05);
+        }
+
+        .column-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .measure-box.active .column-label {
+            color: white;
+        }
+
+        .dice-roll {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .measure-box.active .dice-roll {
+            color: #fff3cd;
+        }
+
+        .measure-number {
+            background: #5a4fcf;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .waltz-sequence {
+            background: #e8f5e8;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .sequence-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2d5016;
+            margin-bottom: 15px;
+        }
+
+        .sequence-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .sequence-number {
+            background: #4caf50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            min-width: 45px;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border: 2px solid #ffeeba;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .info-box.blue {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        .info-box.green {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #5a4fcf;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1em;
+            margin-top: 5px;
+        }
+
+        .about-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .feature-card h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            line-height: 1.8;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .measures-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎼 Mozart's Musical Dice Game 🎲</h1>
+            <p class="subtitle">Musikalisches Würfelspiel (K.516f) - Complete Interactive Edition</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('game')">🎲 Play Game</button>
+            <button class="tab-btn" onclick="showTab('about')">📖 About</button>
+            <button class="tab-btn" onclick="showTab('how')">❓ How It Works</button>
+            <button class="tab-btn" onclick="showTab('history')">🎻 History</button>
+            <button class="tab-btn" onclick="showTab('tables')">📊 Mozart's Tables</button>
+        </div>
+
+        <!-- Game Tab -->
+        <div id="game" class="tab-content active">
+            <div class="info-box">
+                <strong>🎵 Ready to compose?</strong> Roll two dice 16 times to select musical measures from Mozart's original tables.
+                Each combination creates a completely unique waltz from over <strong>45 trillion possibilities</strong>!
+            </div>
+
+            <div class="game-controls">
+                <button class="btn" onclick="generateWaltz()" id="generateBtn">🎲 Generate New Waltz</button>
+                <button class="btn" onclick="generateWaltzFast()" id="fastBtn">⚡ Quick Generate</button>
+                <button class="btn" onclick="resetGame()">🔄 Reset</button>
+                <button class="btn" onclick="downloadWaltz()" id="downloadBtn" style="display:none;">💾 Download Sequence</button>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+
+            <div class="dice-container">
+                <div class="dice" id="dice1">?</div>
+                <div class="dice" id="dice2">?</div>
+                <div style="font-size: 2em; margin: 0 15px;">=</div>
+                <div class="dice" id="diceSum" style="background: #ffd93d;">?</div>
+            </div>
+
+            <div class="waltz-grid" id="waltzGrid">
+                <div class="half-section">
+                    <div class="half-title">First Half (Measures 1-8)</div>
+                    <div class="measures-grid" id="firstHalf"></div>
+                </div>
+
+                <div class="half-section">
+                    <div class="half-title">Second Half (Measures 9-16)</div>
+                    <div class="measures-grid" id="secondHalf"></div>
+                </div>
+            </div>
+
+            <div class="waltz-sequence" id="waltzSequence" style="display:none;">
+                <div class="sequence-title">🎵 Your Complete Waltz Sequence</div>
+                <div class="sequence-numbers" id="sequenceNumbers"></div>
+            </div>
+
+            <div class="stats" id="stats" style="display:none;">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalMeasures">16</div>
+                    <div class="stat-label">Total Measures</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">176</div>
+                    <div class="stat-label">Available Measures</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">45.9T</div>
+                    <div class="stat-label">Possible Waltzes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="uniqueId">-</div>
+                    <div class="stat-label">Your Waltz ID</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Tab -->
+        <div id="about" class="tab-content">
+            <div class="about-section">
+                <h2>🎯 What is This?</h2>
+                <p>In 1787, Wolfgang Amadeus Mozart created an ingenious system that lets anyone compose waltzes without knowing music theory. You simply roll two dice 16 times, look up the results in his special number tables (Zahlentafel), and play the corresponding pre-composed musical measures. Each game creates a completely unique waltz!</p>
+
+                <h2>✨ Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🎲 Interactive Dice Rolling</h3>
+                        <p>Watch the dice roll and see your waltz come together in real-time with smooth animations.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 Visual Tables</h3>
+                        <p>See Mozart's original number tables (Zahlentafel) with all 11 possible dice outcomes.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎵 Measure Tracking</h3>
+                        <p>Follow along as each of the 16 measures is selected from 176 pre-composed options.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>💾 Export Your Waltz</h3>
+                        <p>Download your unique composition sequence to save and share your creation.</p>
+                    </div>
+                </div>
+
+                <h2>🔢 The Mathematics</h2>
+                <div class="info-box blue">
+                    <p><strong>Total Possible Waltzes:</strong> 11<sup>16</sup> = <strong>45,949,729,863,572,161</strong></p>
+                    <p>That's nearly 46 quadrillion unique waltzes! Even if you generated one waltz per second, it would take over 1.4 billion years to create them all.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works Tab -->
+        <div id="how" class="tab-content">
+            <div class="about-section">
+                <h2>🎲 How the Dice Game Works</h2>
+
+                <h3>Step 1: Understanding the Structure</h3>
+                <p>A waltz consists of 16 measures (musical bars), divided into two halves:</p>
+                <ul>
+                    <li><strong>First Half:</strong> Measures 1-8</li>
+                    <li><strong>Second Half:</strong> Measures 9-16</li>
+                </ul>
+
+                <h3>Step 2: Roll the Dice</h3>
+                <p>For each of the 16 positions:</p>
+                <ol>
+                    <li>Roll two six-sided dice</li>
+                    <li>Add the results (sum will be 2-12)</li>
+                    <li>Look up the dice sum in the appropriate table</li>
+                    <li>Find the measure number for that column position</li>
+                </ol>
+
+                <h3>Step 3: Build Your Waltz</h3>
+                <div class="info-box green">
+                    <p><strong>Example:</strong></p>
+                    <p>Roll for Position 1 (Column A): 🎲 3 + 🎲 4 = 7</p>
+                    <p>Look up row 7, column A in the First Half table → Measure 104</p>
+                    <p>This measure becomes the first measure of your waltz!</p>
+                </div>
+
+                <h3>Step 4: Repeat</h3>
+                <p>Continue rolling for all 16 positions (8 columns × 2 halves) to complete your unique waltz.</p>
+
+                <h3>Mozart's Genius</h3>
+                <p>Mozart pre-composed 176 different musical measures, carefully designed so that any combination would sound harmonious. The measures were arranged in his tables so that:</p>
+                <ul>
+                    <li>Each column position works with any dice roll</li>
+                    <li>Musical phrases flow naturally from one to the next</li>
+                    <li>The overall structure maintains proper waltz form</li>
+                    <li>Harmonic progressions remain pleasing regardless of combination</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div class="about-section">
+                <h2>🎻 Historical Background</h2>
+
+                <h3>The Original Musikalisches Würfelspiel</h3>
+                <p>Mozart's <em>Musikalisches Würfelspiel</em> (Musical Dice Game), catalogued as K.516f, represents one of the earliest examples of algorithmic composition in Western music history. Created around 1787, this ingenious system demonstrates how mathematical principles can be applied to create art, predating modern computational music by over 200 years.</p>
+
+                <h3>The Historical Manuscript</h3>
+                <p>The original consists of:</p>
+                <ul>
+                    <li><strong>Two number tables</strong> (Zahlentafel) mapping dice rolls to measure numbers</li>
+                    <li><strong>176 pre-composed measures</strong> of waltz music in 3/4 time</li>
+                    <li><strong>Simple instructions</strong> for combining them into complete pieces</li>
+                </ul>
+
+                <h3>Context in Mozart's Life</h3>
+                <div class="info-box">
+                    <p>In 1787, Mozart was at the height of his creative powers. This was the same year he composed:</p>
+                    <ul>
+                        <li>Don Giovanni (K.527)</li>
+                        <li>Eine kleine Nachtmusik (K.525)</li>
+                        <li>Several string quintets and other masterworks</li>
+                    </ul>
+                    <p>The dice game represented both a playful diversion and a serious exploration of musical structure and variation.</p>
+                </div>
+
+                <h3>The Tradition of Musical Games</h3>
+                <p>Mozart wasn't alone in creating musical dice games. The 18th century saw several composers experiment with aleatory (chance-based) composition, including:</p>
+                <ul>
+                    <li><strong>C.P.E. Bach</strong> - Created similar dice games</li>
+                    <li><strong>Joseph Haydn</strong> - Experimented with chance elements</li>
+                    <li><strong>Johann Philipp Kirnberger</strong> - Published "The Ever-Ready Polonaise and Minuet Composer" (1757)</li>
+                </ul>
+
+                <h3>Modern Influence</h3>
+                <p>Mozart's dice game influenced:</p>
+                <ul>
+                    <li>20th century aleatoric music (John Cage, Karlheinz Stockhausen)</li>
+                    <li>Generative music systems</li>
+                    <li>Computer-aided composition</li>
+                    <li>Modern procedural music generation in video games</li>
+                </ul>
+
+                <h3>Authenticity Questions</h3>
+                <div class="info-box blue">
+                    <p><strong>Note:</strong> While traditionally attributed to Mozart, some musicologists debate the authorship of K.516f. The piece was first published in 1793, two years after Mozart's death, and the manuscript's attribution has been questioned. However, the style and sophistication of the system strongly suggest Mozart's involvement, and it remains widely accepted as his work.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables Tab -->
+        <div id="tables" class="tab-content">
+            <div class="about-section">
+                <h2>📊 Mozart's Original Number Tables (Zahlentafel)</h2>
+                <p>These are the exact tables Mozart used to map dice rolls to measure numbers.</p>
+
+                <h3>First Half Table (Measures 1-8)</h3>
+                <div style="overflow-x: auto;">
+                    <table id="firstHalfTableDisplay" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                        <thead>
+                            <tr style="background: #5a4fcf; color: white;">
+                                <th style="padding: 10px; border: 1px solid #ddd;">Dice Sum</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column A</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column B</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column C</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column D</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column E</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column F</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column G</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column H</th>
+                            </tr>
+                        </thead>
+                        <tbody id="firstHalfTableBody"></tbody>
+                    </table>
+                </div>
+
+                <h3>Second Half Table (Measures 9-16)</h3>
+                <div style="overflow-x: auto;">
+                    <table id="secondHalfTableDisplay" style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                        <thead>
+                            <tr style="background: #764ba2; color: white;">
+                                <th style="padding: 10px; border: 1px solid #ddd;">Dice Sum</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column A</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column B</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column C</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column D</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column E</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column F</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column G</th>
+                                <th style="padding: 10px; border: 1px solid #ddd;">Column H</th>
+                            </tr>
+                        </thead>
+                        <tbody id="secondHalfTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>Understanding the Tables:</strong></p>
+                    <ul>
+                        <li>Each row represents a possible dice sum (2 through 12)</li>
+                        <li>Each column represents a position in the waltz (A through H)</li>
+                        <li>The numbers in the cells are the measure numbers to play</li>
+                        <li>Sum of 7 is most common (probability: 16.67%)</li>
+                        <li>Sums of 2 and 12 are rarest (probability: 2.78% each)</li>
+                    </ul>
+                </div>
+
+                <h3>Probability Distribution</h3>
+                <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <canvas id="probabilityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🎉 <strong>Mozart's Musical Dice Game</strong> - Complete Interactive Edition</p>
+            <p>An implementation of Wolfgang Amadeus Mozart's Musikalisches Würfelspiel (K.516f, c.1787)</p>
+            <p style="margin-top: 10px;">Happy composing! You're now part of a tradition that spans over 230 years of algorithmic music creation.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Mozart's original number tables (Zahlentafel)
+        const firstHalfTable = {
+            2:  [96, 22, 101, 14, 119, 44, 49, 2],
+            3:  [32, 6, 128, 63, 146, 46, 134, 81],
+            4:  [69, 95, 158, 13, 153, 55, 110, 24],
+            5:  [40, 17, 113, 85, 161, 2, 159, 100],
+            6:  [148, 74, 163, 45, 80, 97, 36, 107],
+            7:  [104, 157, 27, 167, 154, 68, 118, 91],
+            8:  [152, 60, 171, 53, 99, 133, 21, 127],
+            9:  [119, 84, 114, 50, 140, 86, 169, 94],
+            10: [98, 142, 42, 156, 75, 129, 62, 123],
+            11: [3, 87, 165, 61, 135, 47, 147, 33],
+            12: [54, 130, 10, 103, 28, 37, 106, 5]
+        };
+
+        const secondHalfTable = {
+            2:  [70, 121, 26, 9, 112, 49, 109, 14],
+            3:  [117, 39, 126, 56, 174, 18, 116, 83],
+            4:  [66, 139, 15, 132, 73, 58, 145, 79],
+            5:  [90, 176, 7, 34, 67, 160, 52, 170],
+            6:  [25, 143, 64, 125, 76, 136, 1, 93],
+            7:  [138, 71, 150, 29, 101, 162, 23, 151],
+            8:  [16, 155, 57, 175, 43, 168, 89, 172],
+            9:  [120, 88, 48, 166, 51, 115, 72, 111],
+            10: [65, 77, 19, 82, 137, 38, 149, 8],
+            11: [102, 4, 31, 164, 144, 59, 173, 78],
+            12: [35, 20, 108, 92, 12, 124, 44, 131]
+        };
+
+        let currentWaltz = [];
+        let isGenerating = false;
+        let generationHistory = [];
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Initialize tables if showing tables tab
+            if (tabName === 'tables' && !document.getElementById('firstHalfTableBody').innerHTML) {
+                populateTables();
+                drawProbabilityChart();
+            }
+        }
+
+        // Initialize game grid
+        function initializeGrid() {
+            const firstHalf = document.getElementById('firstHalf');
+            const secondHalf = document.getElementById('secondHalf');
+            const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+            firstHalf.innerHTML = '';
+            secondHalf.innerHTML = '';
+
+            columns.forEach(col => {
+                const box1 = createMeasureBox(col, true);
+                const box2 = createMeasureBox(col, false);
+                firstHalf.appendChild(box1);
+                secondHalf.appendChild(box2);
+            });
+        }
+
+        function createMeasureBox(column, isFirst) {
+            const box = document.createElement('div');
+            box.className = 'measure-box';
+            box.id = `${isFirst ? 'first' : 'second'}_${column}`;
+            box.innerHTML = `
+                <div class="column-label">Col ${column}</div>
+                <div class="dice-roll">Roll: -</div>
+                <div class="measure-number">---</div>
+            `;
+            return box;
+        }
+
+        function rollDice() {
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            return { die1, die2, sum: die1 + die2 };
+        }
+
+        function animateDice(die1, die2, sum) {
+            const dice1El = document.getElementById('dice1');
+            const dice2El = document.getElementById('dice2');
+            const sumEl = document.getElementById('diceSum');
+
+            dice1El.classList.add('rolling');
+            dice2El.classList.add('rolling');
+            sumEl.classList.add('rolling');
+
+            setTimeout(() => {
+                dice1El.textContent = die1;
+                dice2El.textContent = die2;
+                sumEl.textContent = sum;
+
+                dice1El.classList.remove('rolling');
+                dice2El.classList.remove('rolling');
+                sumEl.classList.remove('rolling');
+            }, 500);
+        }
+
+        async function generateWaltz() {
+            if (isGenerating) return;
+
+            isGenerating = true;
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('fastBtn').disabled = true;
+            document.getElementById('progressBar').style.display = 'block';
+
+            resetGame();
+            initializeGrid();
+
+            currentWaltz = [];
+            const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+            // Generate first half
+            for (let i = 0; i < 8; i++) {
+                updateProgress((i / 16) * 100, `Generating First Half: ${i + 1}/8`);
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                const roll = rollDice();
+                animateDice(roll.die1, roll.die2, roll.sum);
+
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const measure = firstHalfTable[roll.sum][i];
+                currentWaltz.push(measure);
+
+                const box = document.getElementById(`first_${columns[i]}`);
+                box.querySelector('.dice-roll').textContent = `Roll: ${roll.sum}`;
+                box.querySelector('.measure-number').textContent = measure;
+                box.classList.add('active');
+            }
+
+            // Generate second half
+            for (let i = 0; i < 8; i++) {
+                updateProgress(((i + 8) / 16) * 100, `Generating Second Half: ${i + 1}/8`);
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                const roll = rollDice();
+                animateDice(roll.die1, roll.die2, roll.sum);
+
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                const measure = secondHalfTable[roll.sum][i];
+                currentWaltz.push(measure);
+
+                const box = document.getElementById(`second_${columns[i]}`);
+                box.querySelector('.dice-roll').textContent = `Roll: ${roll.sum}`;
+                box.querySelector('.measure-number').textContent = measure;
+                box.classList.add('active');
+            }
+
+            updateProgress(100, 'Complete!');
+            setTimeout(() => {
+                document.getElementById('progressBar').style.display = 'none';
+            }, 1000);
+
+            displayWaltzSequence();
+            showStats();
+            saveToHistory();
+
+            isGenerating = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('fastBtn').disabled = false;
+        }
+
+        async function generateWaltzFast() {
+            if (isGenerating) return;
+
+            isGenerating = true;
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('fastBtn').disabled = true;
+
+            resetGame();
+            initializeGrid();
+
+            currentWaltz = [];
+            const columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+            // Generate instantly
+            for (let i = 0; i < 8; i++) {
+                const roll = rollDice();
+                const measure = firstHalfTable[roll.sum][i];
+                currentWaltz.push(measure);
+
+                const box = document.getElementById(`first_${columns[i]}`);
+                box.querySelector('.dice-roll').textContent = `Roll: ${roll.sum}`;
+                box.querySelector('.measure-number').textContent = measure;
+                box.classList.add('active');
+            }
+
+            for (let i = 0; i < 8; i++) {
+                const roll = rollDice();
+                const measure = secondHalfTable[roll.sum][i];
+                currentWaltz.push(measure);
+
+                const box = document.getElementById(`second_${columns[i]}`);
+                box.querySelector('.dice-roll').textContent = `Roll: ${roll.sum}`;
+                box.querySelector('.measure-number').textContent = measure;
+                box.classList.add('active');
+            }
+
+            // Show final dice
+            const finalRoll = rollDice();
+            animateDice(finalRoll.die1, finalRoll.die2, finalRoll.sum);
+
+            displayWaltzSequence();
+            showStats();
+            saveToHistory();
+
+            isGenerating = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('fastBtn').disabled = false;
+        }
+
+        function updateProgress(percent, message) {
+            const fill = document.getElementById('progressFill');
+            fill.style.width = percent + '%';
+            fill.textContent = message;
+        }
+
+        function displayWaltzSequence() {
+            const sequenceEl = document.getElementById('sequenceNumbers');
+            sequenceEl.innerHTML = '';
+
+            currentWaltz.forEach((measure, index) => {
+                const span = document.createElement('span');
+                span.className = 'sequence-number';
+                span.textContent = measure;
+                span.title = `Position ${index + 1}`;
+                sequenceEl.appendChild(span);
+            });
+
+            document.getElementById('waltzSequence').style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+        }
+
+        function showStats() {
+            const uniqueId = currentWaltz.join('').substring(0, 8);
+            document.getElementById('uniqueId').textContent = uniqueId;
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        function resetGame() {
+            currentWaltz = [];
+            document.getElementById('waltzSequence').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+
+            ['dice1', 'dice2', 'diceSum'].forEach(id => {
+                document.getElementById(id).textContent = '?';
+            });
+
+            document.querySelectorAll('.measure-box').forEach(box => {
+                box.classList.remove('active');
+            });
+        }
+
+        function downloadWaltz() {
+            if (currentWaltz.length === 0) return;
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            const data = {
+                title: "Mozart's Musical Dice Waltz",
+                timestamp: new Date().toISOString(),
+                measureSequence: currentWaltz,
+                firstHalf: currentWaltz.slice(0, 8),
+                secondHalf: currentWaltz.slice(8, 16),
+                uniqueId: currentWaltz.join('').substring(0, 8),
+                totalPossibilities: "45,949,729,863,572,161"
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mozart_waltz_${timestamp}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('🎵 Your waltz has been downloaded!\n\nThis JSON file contains your complete waltz sequence and can be used to recreate this exact composition.');
+        }
+
+        function saveToHistory() {
+            generationHistory.push({
+                timestamp: new Date().toISOString(),
+                sequence: [...currentWaltz]
+            });
+
+            // Keep only last 10
+            if (generationHistory.length > 10) {
+                generationHistory.shift();
+            }
+        }
+
+        // Populate tables tab
+        function populateTables() {
+            const firstBody = document.getElementById('firstHalfTableBody');
+            const secondBody = document.getElementById('secondHalfTableBody');
+
+            for (let dice = 2; dice <= 12; dice++) {
+                // First half
+                let row1 = document.createElement('tr');
+                row1.style.background = dice % 2 === 0 ? '#f8f9fa' : 'white';
+
+                let cell1 = document.createElement('td');
+                cell1.style.padding = '10px';
+                cell1.style.border = '1px solid #ddd';
+                cell1.style.fontWeight = 'bold';
+                cell1.style.textAlign = 'center';
+                cell1.textContent = dice;
+                row1.appendChild(cell1);
+
+                firstHalfTable[dice].forEach(num => {
+                    let cell = document.createElement('td');
+                    cell.style.padding = '10px';
+                    cell.style.border = '1px solid #ddd';
+                    cell.style.textAlign = 'center';
+                    cell.textContent = num;
+                    row1.appendChild(cell);
+                });
+                firstBody.appendChild(row1);
+
+                // Second half
+                let row2 = document.createElement('tr');
+                row2.style.background = dice % 2 === 0 ? '#f8f9fa' : 'white';
+
+                let cell2 = document.createElement('td');
+                cell2.style.padding = '10px';
+                cell2.style.border = '1px solid #ddd';
+                cell2.style.fontWeight = 'bold';
+                cell2.style.textAlign = 'center';
+                cell2.textContent = dice;
+                row2.appendChild(cell2);
+
+                secondHalfTable[dice].forEach(num => {
+                    let cell = document.createElement('td');
+                    cell.style.padding = '10px';
+                    cell.style.border = '1px solid #ddd';
+                    cell.style.textAlign = 'center';
+                    cell.textContent = num;
+                    row2.appendChild(cell);
+                });
+                secondBody.appendChild(row2);
+            }
+        }
+
+        // Draw probability chart
+        function drawProbabilityChart() {
+            const canvas = document.getElementById('probabilityChart');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Data
+            const probabilities = {
+                2: 2.78, 3: 5.56, 4: 8.33, 5: 11.11, 6: 13.89,
+                7: 16.67, 8: 13.89, 9: 11.11, 10: 8.33, 11: 5.56, 12: 2.78
+            };
+
+            const labels = Object.keys(probabilities);
+            const values = Object.values(probabilities);
+            const maxValue = Math.max(...values);
+
+            // Dimensions
+            const padding = 40;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+            const barWidth = chartWidth / labels.length - 10;
+
+            // Draw bars
+            labels.forEach((label, i) => {
+                const value = values[i];
+                const barHeight = (value / maxValue) * chartHeight;
+                const x = padding + i * (barWidth + 10);
+                const y = canvas.height - padding - barHeight;
+
+                // Bar
+                const gradient = ctx.createLinearGradient(0, y, 0, canvas.height - padding);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, barWidth, barHeight);
+
+                // Label
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Georgia';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, x + barWidth / 2, canvas.height - padding + 20);
+
+                // Value
+                ctx.fillText(value.toFixed(1) + '%', x + barWidth / 2, y - 5);
+            });
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('Probability of Each Dice Sum', canvas.width / 2, 20);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeGrid();
+        });
+    </script>
+</body>
+</html>
