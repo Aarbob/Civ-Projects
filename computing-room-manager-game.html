@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computing Room Manager - Organization Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Left Sidebar - Toolbox */
+        .toolbox {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-right: 2px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .toolbox h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .worker-template {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: grab;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .worker-template:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-color: #ffd700;
+        }
+
+        .worker-template:active {
+            cursor: grabbing;
+        }
+
+        .worker-icon {
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .worker-name {
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .worker-cost {
+            font-size: 0.85em;
+            text-align: center;
+            color: #ffd700;
+        }
+
+        .worker-stats {
+            font-size: 0.75em;
+            color: #ddd;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        /* Center - Canvas */
+        .canvas {
+            background:
+                linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            position: relative;
+            overflow: auto;
+        }
+
+        .canvas-inner {
+            min-width: 2000px;
+            min-height: 2000px;
+            position: relative;
+        }
+
+        .worker-node {
+            position: absolute;
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border-radius: 12px;
+            padding: 10px;
+            cursor: move;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 3px solid #3498db;
+            transition: all 0.2s;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .worker-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .worker-node.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .worker-node.dragging {
+            opacity: 0.7;
+            z-index: 1000;
+        }
+
+        .worker-node.working {
+            animation: workingPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes workingPulse {
+            0%, 100% { border-color: #3498db; }
+            50% { border-color: #2ecc71; }
+        }
+
+        .worker-node.error {
+            border-color: #e74c3c;
+            animation: errorShake 0.5s;
+        }
+
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #e74c3c;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8em;
+        }
+
+        .worker-node:hover .delete-btn {
+            display: flex;
+        }
+
+        .connection-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke: #3498db;
+            stroke-width: 3;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .connection-line.active {
+            stroke: #2ecc71;
+            stroke-width: 4;
+            animation: flowAnimation 1s linear infinite;
+        }
+
+        .connection-line.error {
+            stroke: #e74c3c;
+            stroke-width: 4;
+        }
+
+        @keyframes flowAnimation {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -20; }
+        }
+
+        /* Right Sidebar - Stats & Controls */
+        .control-panel {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-section h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            font-size: 1.1em;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #bdc3c7;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .stat-value.good {
+            color: #2ecc71;
+        }
+
+        .stat-value.bad {
+            color: #e74c3c;
+        }
+
+        .stat-value.warning {
+            color: #f39c12;
+        }
+
+        .game-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .game-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-btn.success {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        .game-btn.danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+
+        .mode-btn.active {
+            background: #3498db;
+            border-color: #3498db;
+        }
+
+        .objective {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .objective-title {
+            font-weight: 600;
+            color: #ffd700;
+            margin-bottom: 8px;
+        }
+
+        .objective-desc {
+            font-size: 0.85em;
+            line-height: 1.4;
+            color: #ecf0f1;
+        }
+
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.3);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .tutorial-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .tutorial-box h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .tutorial-box p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 30px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .connection-mode-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(52, 152, 219, 0.9);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: none;
+            z-index: 100;
+        }
+
+        .mini-map {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 10px;
+            aspect-ratio: 16/9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-map-viewport {
+            position: absolute;
+            border: 2px solid #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            pointer-events: none;
+            z-index: 10000;
+            white-space: nowrap;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Left Sidebar: Toolbox -->
+        <div class="toolbox">
+            <h2>🧰 Worker Types</h2>
+            <p style="font-size: 0.85em; color: #bdc3c7; margin-bottom: 20px;">
+                Drag workers onto the canvas to build your computing room
+            </p>
+
+            <div class="worker-template" draggable="true" data-type="computer">
+                <div class="worker-icon">📝</div>
+                <div class="worker-name">Computer</div>
+                <div class="worker-cost">💰 $10/hr</div>
+                <div class="worker-stats">
+                    Speed: ⚡⚡<br>
+                    Error Rate: 15%
+                </div>
+            </div>
+
+            <div class="worker-template" draggable="true" data-type="senior-computer">
+                <div class="worker-icon">👨‍💼</div>
+                <div class="worker-name">Senior Computer</div>
+                <div class="worker-cost">💰 $25/hr</div>
+                <div class="worker-stats">
+                    Speed: ⚡⚡⚡<br>
+                    Error Rate: 5%
+                </div>
+            </div>
+
+            <div class="worker-template" draggable="true" data-type="checker">
+                <div class="worker-icon">✓</div>
+                <div class="worker-name">Checker</div>
+                <div class="worker-cost">💰 $15/hr</div>
+                <div class="worker-stats">
+                    Detects: 95% errors<br>
+                    Speed: ⚡⚡
+                </div>
+            </div>
+
+            <div class="worker-template" draggable="true" data-type="corrector">
+                <div class="worker-icon">🔧</div>
+                <div class="worker-name">Error Corrector</div>
+                <div class="worker-cost">💰 $20/hr</div>
+                <div class="worker-stats">
+                    Fixes errors<br>
+                    Speed: ⚡⚡
+                </div>
+            </div>
+
+            <div class="worker-template" draggable="true" data-type="supervisor">
+                <div class="worker-icon">👔</div>
+                <div class="worker-name">Supervisor</div>
+                <div class="worker-cost">💰 $30/hr</div>
+                <div class="worker-stats">
+                    Boosts team: +20%<br>
+                    Manages: 10 workers
+                </div>
+            </div>
+
+            <div class="worker-template" draggable="true" data-type="tabulator">
+                <div class="worker-icon">📋</div>
+                <div class="worker-name">Tabulator</div>
+                <div class="worker-cost">💰 $12/hr</div>
+                <div class="worker-stats">
+                    Records output<br>
+                    Speed: ⚡⚡⚡
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Canvas -->
+        <div class="canvas" id="canvas">
+            <div class="canvas-inner" id="canvasInner">
+                <svg class="connection-svg" id="connectionSvg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#3498db" />
+                        </marker>
+                        <marker id="arrowhead-active" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#2ecc71" />
+                        </marker>
+                        <marker id="arrowhead-error" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#e74c3c" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+            <div class="connection-mode-indicator" id="connectionModeIndicator">
+                🔗 Connection Mode: Click workers to connect
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Controls & Stats -->
+        <div class="control-panel">
+            <div class="panel-section">
+                <h3>🎯 Current Objective</h3>
+                <div class="objective" id="objective">
+                    <div class="objective-title">Tutorial: Build Your First Pipeline</div>
+                    <div class="objective-desc">
+                        1. Drag a Computer onto the canvas<br>
+                        2. Add a Checker after it<br>
+                        3. Connect them with the Pipeline tool<br>
+                        4. Add a Tabulator at the end
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="objectiveProgress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🛠️ Tools</h3>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" id="selectMode">👆 Select</button>
+                    <button class="mode-btn" id="pipelineMode">🔗 Pipeline</button>
+                </div>
+                <button class="game-btn success" id="runBtn" disabled>▶ Start Production</button>
+                <button class="game-btn" id="pauseBtn" disabled>⏸ Pause</button>
+                <button class="game-btn danger" id="clearBtn">🗑️ Clear All</button>
+            </div>
+
+            <div class="panel-section">
+                <h3>📊 Performance</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Workers Hired:</span>
+                    <span class="stat-value" id="workerCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Hourly Cost:</span>
+                    <span class="stat-value warning" id="hourlyCost">$0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Budget:</span>
+                    <span class="stat-value" id="budget">$1000</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Tasks Completed:</span>
+                    <span class="stat-value good" id="tasksCompleted">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Errors Detected:</span>
+                    <span class="stat-value bad" id="errorsDetected">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Efficiency:</span>
+                    <span class="stat-value good" id="efficiency">100%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Throughput:</span>
+                    <span class="stat-value" id="throughput">0/min</span>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🗺️ Mini Map</h3>
+                <div class="mini-map" id="miniMap">
+                    <div class="mini-map-viewport" id="miniMapViewport"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-box">
+            <h2>🏭 Welcome to Computing Room Manager!</h2>
+            <p>
+                You are the manager of a 1940s human computing facility.<br><br>
+                <strong>Your goal:</strong> Organize workers into efficient pipelines to complete calculations while minimizing errors and costs.<br><br>
+                <strong>Controls:</strong><br>
+                • Drag workers from the toolbox to the canvas<br>
+                • Click "Pipeline" mode to connect workers<br>
+                • Click "Start Production" to begin<br>
+                • Monitor stats and optimize your organization!
+            </p>
+            <button class="game-btn success" onclick="startGame()">Let's Build! 🚀</button>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Game State
+        const gameState = {
+            mode: 'select', // select or pipeline
+            workers: [],
+            connections: [],
+            budget: 1000,
+            tasksCompleted: 0,
+            errorsDetected: 0,
+            running: false,
+            draggedWorker: null,
+            selectedWorker: null,
+            pipelineStart: null,
+            nextWorkerId: 0,
+            currentObjective: 0,
+            speed: 3
+        };
+
+        const workerTypes = {
+            'computer': {
+                icon: '📝',
+                name: 'Computer',
+                cost: 10,
+                speed: 1.0,
+                errorRate: 0.15,
+                color: '#3498db'
+            },
+            'senior-computer': {
+                icon: '👨‍💼',
+                name: 'Senior Computer',
+                cost: 25,
+                speed: 1.5,
+                errorRate: 0.05,
+                color: '#9b59b6'
+            },
+            'checker': {
+                icon: '✓',
+                name: 'Checker',
+                cost: 15,
+                speed: 1.0,
+                errorRate: 0,
+                color: '#27ae60'
+            },
+            'corrector': {
+                icon: '🔧',
+                name: 'Corrector',
+                cost: 20,
+                speed: 1.2,
+                errorRate: 0,
+                color: '#e67e22'
+            },
+            'supervisor': {
+                icon: '👔',
+                name: 'Supervisor',
+                cost: 30,
+                speed: 0,
+                errorRate: 0,
+                color: '#f39c12',
+                boost: 0.2
+            },
+            'tabulator': {
+                icon: '📋',
+                name: 'Tabulator',
+                cost: 12,
+                speed: 1.3,
+                errorRate: 0,
+                color: '#16a085'
+            }
+        };
+
+        const objectives = [
+            {
+                title: 'Tutorial: Build Your First Pipeline',
+                desc: '1. Drag a Computer onto canvas\n2. Add a Checker\n3. Connect with Pipeline tool\n4. Add a Tabulator',
+                check: () => {
+                    const hasComputer = gameState.workers.some(w => w.type === 'computer');
+                    const hasChecker = gameState.workers.some(w => w.type === 'checker');
+                    const hasTabulator = gameState.workers.some(w => w.type === 'tabulator');
+                    const hasConnections = gameState.connections.length >= 2;
+                    return hasComputer && hasChecker && hasTabulator && hasConnections;
+                }
+            },
+            {
+                title: 'Process 10 Tasks Successfully',
+                desc: 'Run your pipeline and complete 10 tasks with your current setup.',
+                check: () => gameState.tasksCompleted >= 10
+            },
+            {
+                title: 'Build an Error Correction Pipeline',
+                desc: 'Add an Error Corrector and connect it properly to handle errors.',
+                check: () => {
+                    return gameState.workers.some(w => w.type === 'corrector') &&
+                           gameState.connections.some(c =>
+                               gameState.workers[c.from]?.type === 'checker' &&
+                               gameState.workers[c.to]?.type === 'corrector'
+                           );
+                }
+            },
+            {
+                title: 'Achieve 90% Efficiency',
+                desc: 'Optimize your pipeline to maintain 90% or higher efficiency.',
+                check: () => {
+                    if (gameState.tasksCompleted < 5) return false;
+                    const efficiency = ((gameState.tasksCompleted - gameState.errorsDetected) / gameState.tasksCompleted) * 100;
+                    return efficiency >= 90;
+                }
+            },
+            {
+                title: 'Hire 20 Workers',
+                desc: 'Scale up your operation to 20 workers and maintain efficiency.',
+                check: () => gameState.workers.length >= 20
+            }
+        ];
+
+        // Initialize
+        function startGame() {
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            setupDragAndDrop();
+            setupCanvas();
+            setupControls();
+            updateStats();
+        }
+
+        function setupDragAndDrop() {
+            const templates = document.querySelectorAll('.worker-template');
+            templates.forEach(template => {
+                template.addEventListener('dragstart', (e) => {
+                    const type = e.target.dataset.type;
+                    e.dataTransfer.setData('workerType', type);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+            });
+
+            const canvas = document.getElementById('canvas');
+            canvas.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            canvas.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('workerType');
+                if (!type) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left + canvas.scrollLeft;
+                const y = e.clientY - rect.top + canvas.scrollTop;
+
+                addWorker(type, x, y);
+            });
+        }
+
+        function addWorker(type, x, y) {
+            const workerData = workerTypes[type];
+            if (!workerData) return;
+
+            // Check budget
+            if (gameState.budget < workerData.cost) {
+                showNotification('❌ Not enough budget!');
+                return;
+            }
+
+            const worker = {
+                id: gameState.nextWorkerId++,
+                type: type,
+                x: x,
+                y: y,
+                status: 'idle', // idle, working, error
+                ...workerData
+            };
+
+            gameState.workers.push(worker);
+            createWorkerNode(worker);
+            updateStats();
+            checkObjective();
+        }
+
+        function createWorkerNode(worker) {
+            const node = document.createElement('div');
+            node.className = 'worker-node';
+            node.id = `worker-${worker.id}`;
+            node.style.left = worker.x + 'px';
+            node.style.top = worker.y + 'px';
+            node.style.borderColor = worker.color;
+
+            node.innerHTML = `
+                <div class="delete-btn" onclick="deleteWorker(${worker.id})">×</div>
+                <div style="font-size: 2em; margin-bottom: 5px;">${worker.icon}</div>
+                <div style="font-size: 0.75em; font-weight: 600;">${worker.name}</div>
+                <div style="font-size: 0.65em; color: #7f8c8d; margin-top: 5px;">$${worker.cost}/hr</div>
+            `;
+
+            // Make draggable
+            node.addEventListener('mousedown', (e) => {
+                if (gameState.mode === 'select') {
+                    startDrag(worker.id, e);
+                } else if (gameState.mode === 'pipeline') {
+                    handlePipelineClick(worker.id);
+                }
+            });
+
+            // Tooltip
+            node.addEventListener('mouseenter', (e) => {
+                showTooltip(e, worker);
+            });
+            node.addEventListener('mouseleave', hideTooltip);
+
+            document.getElementById('canvasInner').appendChild(node);
+        }
+
+        function startDrag(workerId, e) {
+            if (e.target.classList.contains('delete-btn')) return;
+
+            const worker = gameState.workers.find(w => w.id === workerId);
+            if (!worker) return;
+
+            gameState.draggedWorker = {
+                worker: worker,
+                offsetX: e.clientX - worker.x,
+                offsetY: e.clientY - worker.y
+            };
+
+            const node = document.getElementById(`worker-${workerId}`);
+            node.classList.add('dragging');
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!gameState.draggedWorker) return;
+
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
+
+            const x = e.clientX - rect.left + canvas.scrollLeft - gameState.draggedWorker.offsetX;
+            const y = e.clientY - rect.top + canvas.scrollTop - gameState.draggedWorker.offsetY;
+
+            gameState.draggedWorker.worker.x = Math.max(0, x);
+            gameState.draggedWorker.worker.y = Math.max(0, y);
+
+            const node = document.getElementById(`worker-${gameState.draggedWorker.worker.id}`);
+            node.style.left = gameState.draggedWorker.worker.x + 'px';
+            node.style.top = gameState.draggedWorker.worker.y + 'px';
+
+            updateConnections();
+        }
+
+        function endDrag() {
+            if (gameState.draggedWorker) {
+                const node = document.getElementById(`worker-${gameState.draggedWorker.worker.id}`);
+                node.classList.remove('dragging');
+                gameState.draggedWorker = null;
+            }
+
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        function deleteWorker(workerId) {
+            const index = gameState.workers.findIndex(w => w.id === workerId);
+            if (index === -1) return;
+
+            // Remove connections
+            gameState.connections = gameState.connections.filter(c =>
+                c.from !== index && c.to !== index
+            );
+
+            // Adjust connection indices
+            gameState.connections = gameState.connections.map(c => ({
+                from: c.from > index ? c.from - 1 : c.from,
+                to: c.to > index ? c.to - 1 : c.to
+            }));
+
+            gameState.workers.splice(index, 1);
+
+            const node = document.getElementById(`worker-${workerId}`);
+            if (node) node.remove();
+
+            updateConnections();
+            updateStats();
+        }
+
+        function handlePipelineClick(workerId) {
+            const workerIndex = gameState.workers.findIndex(w => w.id === workerId);
+            if (workerIndex === -1) return;
+
+            if (gameState.pipelineStart === null) {
+                // First click - start connection
+                gameState.pipelineStart = workerIndex;
+                document.getElementById(`worker-${workerId}`).classList.add('selected');
+                showNotification('🔗 Now click the destination worker');
+            } else {
+                // Second click - complete connection
+                const startIndex = gameState.pipelineStart;
+                const endIndex = workerIndex;
+
+                if (startIndex === endIndex) {
+                    showNotification('❌ Cannot connect worker to itself');
+                } else if (gameState.connections.some(c => c.from === startIndex && c.to === endIndex)) {
+                    showNotification('❌ Connection already exists');
+                } else {
+                    gameState.connections.push({ from: startIndex, to: endIndex });
+                    showNotification('✓ Pipeline created!');
+                    updateConnections();
+                    checkObjective();
+                }
+
+                document.getElementById(`worker-${gameState.workers[startIndex].id}`).classList.remove('selected');
+                gameState.pipelineStart = null;
+            }
+        }
+
+        function updateConnections() {
+            const svg = document.getElementById('connectionSvg');
+            const canvasInner = document.getElementById('canvasInner');
+            svg.setAttribute('width', canvasInner.scrollWidth);
+            svg.setAttribute('height', canvasInner.scrollHeight);
+
+            // Clear existing lines
+            const existingLines = svg.querySelectorAll('.connection-line');
+            existingLines.forEach(line => line.remove());
+
+            // Draw connections
+            gameState.connections.forEach(conn => {
+                const fromWorker = gameState.workers[conn.from];
+                const toWorker = gameState.workers[conn.to];
+                if (!fromWorker || !toWorker) return;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+                const x1 = fromWorker.x + 50;
+                const y1 = fromWorker.y + 60;
+                const x2 = toWorker.x + 50;
+                const y2 = toWorker.y + 60;
+
+                // Curved line
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const curve = Math.abs(dx) * 0.5;
+
+                const path = `M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`;
+                line.setAttribute('d', path);
+                line.setAttribute('class', 'connection-line');
+                line.setAttribute('stroke-dasharray', '10 10');
+
+                svg.appendChild(line);
+            });
+        }
+
+        function setupCanvas() {
+            const canvas = document.getElementById('canvas');
+
+            // Pan canvas with middle mouse or ctrl+drag
+            let isPanning = false;
+            let panStart = { x: 0, y: 0 };
+
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+                    isPanning = true;
+                    panStart = { x: e.clientX, y: e.clientY };
+                    canvas.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    const dx = e.clientX - panStart.x;
+                    const dy = e.clientY - panStart.y;
+                    canvas.scrollLeft -= dx;
+                    canvas.scrollTop -= dy;
+                    panStart = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (isPanning) {
+                    isPanning = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+        }
+
+        function setupControls() {
+            document.getElementById('selectMode').addEventListener('click', () => {
+                gameState.mode = 'select';
+                document.getElementById('selectMode').classList.add('active');
+                document.getElementById('pipelineMode').classList.remove('active');
+                document.getElementById('connectionModeIndicator').style.display = 'none';
+                if (gameState.pipelineStart !== null) {
+                    const worker = gameState.workers[gameState.pipelineStart];
+                    document.getElementById(`worker-${worker.id}`).classList.remove('selected');
+                    gameState.pipelineStart = null;
+                }
+            });
+
+            document.getElementById('pipelineMode').addEventListener('click', () => {
+                gameState.mode = 'pipeline';
+                document.getElementById('selectMode').classList.remove('active');
+                document.getElementById('pipelineMode').classList.add('active');
+                document.getElementById('connectionModeIndicator').style.display = 'block';
+            });
+
+            document.getElementById('runBtn').addEventListener('click', startProduction);
+            document.getElementById('pauseBtn').addEventListener('click', pauseProduction);
+            document.getElementById('clearBtn').addEventListener('click', clearAll);
+        }
+
+        async function startProduction() {
+            if (gameState.workers.length === 0) {
+                showNotification('❌ Add workers first!');
+                return;
+            }
+
+            gameState.running = true;
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+
+            while (gameState.running) {
+                await processTask();
+                await wait(2000 / gameState.speed);
+            }
+        }
+
+        async function processTask() {
+            // Find starting nodes (no inputs)
+            const inputNodes = new Set(gameState.connections.map(c => c.to));
+            const startNodes = gameState.workers
+                .map((w, i) => i)
+                .filter(i => !inputNodes.has(i) &&
+                       (gameState.workers[i].type === 'computer' ||
+                        gameState.workers[i].type === 'senior-computer'));
+
+            if (startNodes.length === 0) {
+                showNotification('⚠️ No starting workers! Add Computers.');
+                pauseProduction();
+                return;
+            }
+
+            // Process through pipeline
+            for (const startIdx of startNodes) {
+                await processWorkerChain(startIdx);
+            }
+
+            gameState.tasksCompleted++;
+            updateStats();
+            checkObjective();
+        }
+
+        async function processWorkerChain(workerIdx, hasError = false) {
+            const worker = gameState.workers[workerIdx];
+            if (!worker) return;
+
+            // Animate worker
+            const node = document.getElementById(`worker-${worker.id}`);
+            node.classList.add('working');
+
+            // Check if this worker produces an error
+            if (worker.type === 'computer' || worker.type === 'senior-computer') {
+                if (Math.random() < worker.errorRate) {
+                    hasError = true;
+                }
+            }
+
+            // Check if this is a checker and error exists
+            if (worker.type === 'checker' && hasError && Math.random() < 0.95) {
+                gameState.errorsDetected++;
+                node.classList.add('error');
+                showNotification('❌ Error detected!');
+
+                // Find error corrector in connections
+                const correctorConn = gameState.connections.find(c =>
+                    c.from === workerIdx &&
+                    gameState.workers[c.to]?.type === 'corrector'
+                );
+
+                if (correctorConn) {
+                    await wait(1000 / gameState.speed);
+                    node.classList.remove('error');
+                    await processWorkerChain(correctorConn.to, false); // Error fixed
+                    hasError = false;
+                }
+            }
+
+            // If corrector, fix the error
+            if (worker.type === 'corrector') {
+                await wait(2000 / gameState.speed);
+                hasError = false;
+            }
+
+            await wait((1000 / worker.speed) / gameState.speed);
+            node.classList.remove('working', 'error');
+
+            // Animate connections
+            const outgoingConns = gameState.connections.filter(c => c.from === workerIdx);
+            for (const conn of outgoingConns) {
+                await wait(200 / gameState.speed);
+                await processWorkerChain(conn.to, hasError);
+            }
+        }
+
+        function pauseProduction() {
+            gameState.running = false;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+
+            // Clear working states
+            document.querySelectorAll('.worker-node').forEach(node => {
+                node.classList.remove('working', 'error');
+            });
+        }
+
+        function clearAll() {
+            if (!confirm('Clear all workers and connections?')) return;
+
+            gameState.workers.forEach(w => {
+                const node = document.getElementById(`worker-${w.id}`);
+                if (node) node.remove();
+            });
+
+            gameState.workers = [];
+            gameState.connections = [];
+            updateConnections();
+            updateStats();
+        }
+
+        function updateStats() {
+            const totalCost = gameState.workers.reduce((sum, w) => sum + w.cost, 0);
+            const efficiency = gameState.tasksCompleted > 0
+                ? Math.round(((gameState.tasksCompleted - gameState.errorsDetected) / gameState.tasksCompleted) * 100)
+                : 100;
+
+            document.getElementById('workerCount').textContent = gameState.workers.length;
+            document.getElementById('hourlyCost').textContent = '$' + totalCost;
+            document.getElementById('budget').textContent = '$' + gameState.budget;
+            document.getElementById('tasksCompleted').textContent = gameState.tasksCompleted;
+            document.getElementById('errorsDetected').textContent = gameState.errorsDetected;
+            document.getElementById('efficiency').textContent = efficiency + '%';
+
+            // Enable run button if we have workers
+            if (gameState.workers.length > 0 && !gameState.running) {
+                document.getElementById('runBtn').disabled = false;
+            }
+
+            // Update efficiency color
+            const effEl = document.getElementById('efficiency');
+            effEl.className = 'stat-value';
+            if (efficiency >= 90) effEl.classList.add('good');
+            else if (efficiency >= 70) effEl.classList.add('warning');
+            else effEl.classList.add('bad');
+        }
+
+        function checkObjective() {
+            const obj = objectives[gameState.currentObjective];
+            if (!obj) return;
+
+            if (obj.check()) {
+                showNotification('🎉 Objective Complete!');
+                gameState.currentObjective++;
+
+                if (gameState.currentObjective < objectives.length) {
+                    updateObjectiveDisplay();
+                } else {
+                    showNotification('🏆 All objectives completed! You\'re a master manager!');
+                }
+            }
+        }
+
+        function updateObjectiveDisplay() {
+            const obj = objectives[gameState.currentObjective];
+            if (!obj) return;
+
+            document.querySelector('.objective-title').textContent = obj.title;
+            document.querySelector('.objective-desc').textContent = obj.desc;
+        }
+
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        function showTooltip(e, worker) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${worker.name}</strong><br>
+                Cost: $${worker.cost}/hr<br>
+                Speed: ${worker.speed}x<br>
+                Error Rate: ${(worker.errorRate * 100).toFixed(0)}%
+            `;
+            tooltip.style.display = 'block';
+            tooltip.style.left = e.pageX + 10 + 'px';
+            tooltip.style.top = e.pageY + 10 + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Update mini-map
+        setInterval(() => {
+            // This would show canvas viewport position
+        }, 100);
+    </script>
+</body>
+</html>
